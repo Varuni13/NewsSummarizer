@@ -87,9 +87,11 @@ This will start a local web server, and the app will be accessible at http://loc
 4. Text-to-Speech: You can listen to the summary by clicking the "Convert to Speech" button.
 
 ## Deployment
+
 The app has been deployed on both GitHub and Hugging Face Spaces. You can access the live web application at the following URL:
 
-- Hugging Face Space: News Summarizer - Live
+- Hugging Face Space: [News Summarizer - Live](https://huggingface.co/spaces/Singhvar/NewsSummarizer)
+
 
 ## How It Works
 1. Summarization:
