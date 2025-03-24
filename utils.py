@@ -7,13 +7,18 @@ from langdetect import detect  # For language detection
 from gtts import gTTS  # For Text-to-Speech (TTS) functionality
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from collections import Counter
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 import os
+import nltk
 
 # Initialize RAKE, SpaCy, and SentimentIntensityAnalyzer (VADER)
 rake = Rake()
 nlp = spacy.load("en_core_web_sm")
 sid = SentimentIntensityAnalyzer()
+
+# Download the NLTK stopwords resource
+nltk.download('stopwords')
+
 
 
 def filter_keywords(keywords, doc):
@@ -144,9 +149,8 @@ def generate_tts(text, filename="summary_hindi.mp3"):
     Returns:
         str: The filename of the saved TTS audio.
     """
-    # Translate the summary into Hindi using Google Translate
-    translator = Translator()
-    translated_text = translator.translate(text, src='en', dest='hi').text
+    # Translate the summary into Hindi using deep-translator
+    translated_text = GoogleTranslator(source='en', target='hi').translate(text)
 
     # Convert the translated Hindi text to speech
     tts = gTTS(text=translated_text, lang='hi', slow=False)
