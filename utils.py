@@ -15,17 +15,38 @@ import nltk
 try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
-    nltk.download('stopwords')
+    try:
+        nltk.download('stopwords')
+    except Exception as e:
+        print(f"Error downloading 'stopwords' resource: {e}")
     
 try:
     nltk.data.find('sentiment/vader_lexicon')
 except LookupError:
-    nltk.download('vader_lexicon')
+    try:
+        nltk.download('vader_lexicon')
+    except Exception as e:
+        print(f"Error downloading 'vader_lexicon' resource: {e}")
+
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    try:
+        nltk.download('punkt')
+    except Exception as e:
+        print(f"Error downloading 'punkt' resource: {e}")
 
 # Initialize RAKE, SpaCy, and SentimentIntensityAnalyzer (VADER)
-rake = Rake()
-nlp = spacy.load("en_core_web_sm")
-sid = SentimentIntensityAnalyzer()
+try:
+    rake = Rake()
+    nlp = spacy.load("en_core_web_sm")
+    sid = SentimentIntensityAnalyzer()
+except Exception as e:
+    print(f"Error initializing libraries: {e}")
+    # Optionally, handle reinitialization or fail gracefully
+    rake = None
+    nlp = None
+    sid = None
 
 def filter_keywords(keywords, doc):
     """
@@ -70,10 +91,14 @@ def extract_keywords(text):
     Returns:
         list: A list of filtered keywords.
     """
-    rake.extract_keywords_from_text(text)
-    keywords = rake.get_ranked_phrases()
-    doc = nlp(text)
-    return filter_keywords(keywords, doc)
+    try:
+        rake.extract_keywords_from_text(text)
+        keywords = rake.get_ranked_phrases()
+        doc = nlp(text)
+        return filter_keywords(keywords, doc)
+    except Exception as e:
+        print(f"Error extracting keywords: {e}")
+        return []  # Return an empty list if extraction fails
 
 
 def extract_relevant_entities(text):
@@ -86,14 +111,18 @@ def extract_relevant_entities(text):
     Returns:
         list: A list of relevant entities extracted from the text.
     """
-    doc = nlp(text)
-    relevant_entities = []
-    
-    for entity in doc.ents:
-        if entity.label_ in ['ORG', 'PRODUCT', 'EVENT']:
-            relevant_entities.append(entity.text)
-    
-    return relevant_entities
+    try:
+        doc = nlp(text)
+        relevant_entities = []
+
+        for entity in doc.ents:
+            if entity.label_ in ['ORG', 'PRODUCT', 'EVENT']:
+                relevant_entities.append(entity.text)
+
+        return relevant_entities
+    except Exception as e:
+        print(f"Error extracting relevant entities: {e}")
+        return []
 
 
 def is_english(text):
@@ -108,7 +137,8 @@ def is_english(text):
     """
     try:
         return detect(text) == 'en'
-    except:
+    except Exception as e:
+        print(f"Error detecting language: {e}")
         return False
 
 
@@ -122,8 +152,13 @@ def analyze_sentiment(text):
     Returns:
         float: The sentiment score of the text. Positive for positive sentiment, negative for negative, and neutral.
     """
-    sentiment_score = sid.polarity_scores(text)
-    return sentiment_score['compound']
+    try:
+        sentiment_score = sid.polarity_scores(text)
+        return sentiment_score['compound']
+    except Exception as e:
+        print(f"Error analyzing sentiment: {e}")
+        return 0.0  # Return a neutral sentiment score if it fails
+
 
 def fetch_articles(company_name):
     """
@@ -135,21 +170,25 @@ def fetch_articles(company_name):
     Returns:
         list: A list of articles related to the company.
     """
-    API_KEY = '08b3f0b3d53e42d5acf1a0d7321beeaa' 
+    API_KEY = 'your_actual_api_key_here'
     url = f"https://newsapi.org/v2/everything?q={company_name}&apiKey={API_KEY}"
 
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        articles = response.json().get("articles", [])
-        if not articles:
-            print(f"No articles found for {company_name}")
-        return articles
-    else:
-        print(f"Failed to fetch articles. Status code: {response.status_code}")
-        print(f"Error message: {response.text}")
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            articles = response.json().get("articles", [])
+            if not articles:
+                print(f"No articles found for {company_name}")
+            return articles
+        else:
+            print(f"Failed to fetch articles. Status code: {response.status_code}")
+            print(f"Error message: {response.text}")
+            return []
+    except Exception as e:
+        print(f"Error fetching articles: {e}")
         return []
-    
+
+
 def generate_tts(text, filename="summary_hindi.mp3"):
     """
     Converts the input text to speech in Hindi and saves it to a file.
@@ -161,12 +200,16 @@ def generate_tts(text, filename="summary_hindi.mp3"):
     Returns:
         str: The filename of the saved TTS audio.
     """
-    # Translate the summary into Hindi using deep-translator
-    translated_text = GoogleTranslator(source='en', target='hi').translate(text)
+    try:
+        # Translate the summary into Hindi using deep-translator
+        translated_text = GoogleTranslator(source='en', target='hi').translate(text)
 
-    # Convert the translated Hindi text to speech
-    tts = gTTS(text=translated_text, lang='hi', slow=False)
-    tts.save(filename)
+        # Convert the translated Hindi text to speech
+        tts = gTTS(text=translated_text, lang='hi', slow=False)
+        tts.save(filename)
 
-    # Return the filename for later use
-    return filename
+        # Return the filename for later use
+        return filename
+    except Exception as e:
+        print(f"Error generating TTS: {e}")
+        return ""  # Return an empty string in case of failure
