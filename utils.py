@@ -11,15 +11,16 @@ from deep_translator import GoogleTranslator
 import os
 import nltk
 
+# Download the stopwords resource for NLTK (if not already available)
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+
 # Initialize RAKE, SpaCy, and SentimentIntensityAnalyzer (VADER)
 rake = Rake()
 nlp = spacy.load("en_core_web_sm")
 sid = SentimentIntensityAnalyzer()
-
-# Download the NLTK stopwords resource
-nltk.download('stopwords')
-
-
 
 def filter_keywords(keywords, doc):
     """
