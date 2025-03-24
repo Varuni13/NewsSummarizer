@@ -125,7 +125,6 @@ def analyze_sentiment(text):
     sentiment_score = sid.polarity_scores(text)
     return sentiment_score['compound']
 
-
 def fetch_articles(company_name):
     """
     Fetches articles related to the company from NewsAPI using an API key.
@@ -136,14 +135,21 @@ def fetch_articles(company_name):
     Returns:
         list: A list of articles related to the company.
     """
-    API_KEY = os.getenv("API_KEY")
+    API_KEY = '51349bfb3340a99d9b655930f3e085' 
     url = f"https://newsapi.org/v2/everything?q={company_name}&apiKey={API_KEY}"
 
     response = requests.get(url)
-    articles = response.json().get("articles", [])
-    return articles
-
-
+    
+    if response.status_code == 200:
+        articles = response.json().get("articles", [])
+        if not articles:
+            print(f"No articles found for {company_name}")
+        return articles
+    else:
+        print(f"Failed to fetch articles. Status code: {response.status_code}")
+        print(f"Error message: {response.text}")
+        return []
+    
 def generate_tts(text, filename="summary_hindi.mp3"):
     """
     Converts the input text to speech in Hindi and saves it to a file.
