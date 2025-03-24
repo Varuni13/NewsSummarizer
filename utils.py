@@ -16,6 +16,11 @@ try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
     nltk.download('stopwords')
+    
+try:
+    nltk.data.find('sentiment/vader_lexicon')
+except LookupError:
+    nltk.download('vader_lexicon')
 
 # Initialize RAKE, SpaCy, and SentimentIntensityAnalyzer (VADER)
 rake = Rake()
