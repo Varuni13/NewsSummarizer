@@ -170,7 +170,7 @@ def fetch_articles(company_name):
     Returns:
         list: A list of articles related to the company.
     """
-    API_KEY = 'your_actual_api_key_here'
+    API_KEY = '08b3f0b3d53e42d5acf1a0d7321beeaa'
     url = f"https://newsapi.org/v2/everything?q={company_name}&apiKey={API_KEY}"
 
     try:
