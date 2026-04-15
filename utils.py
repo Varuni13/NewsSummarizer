@@ -14,6 +14,14 @@ from dotenv import load_dotenv
 
 load_dotenv()  # loads API_KEY from .env into os.environ
 
+# Also support Streamlit Cloud secrets (st.secrets["API_KEY"])
+try:
+    import streamlit as st
+    if "API_KEY" in st.secrets:
+        os.environ["API_KEY"] = st.secrets["API_KEY"]
+except Exception:
+    pass
+
 # Auto-download required NLTK data on first run
 for _pkg in ("stopwords", "vader_lexicon", "punkt", "punkt_tab"):
     nltk.download(_pkg, quiet=True)
