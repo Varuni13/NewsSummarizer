@@ -9,6 +9,14 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from collections import Counter
 from googletrans import Translator
 import os
+import nltk
+from dotenv import load_dotenv
+
+load_dotenv()  # loads API_KEY from .env into os.environ
+
+# Auto-download required NLTK data on first run
+for _pkg in ("stopwords", "vader_lexicon", "punkt", "punkt_tab"):
+    nltk.download(_pkg, quiet=True)
 
 # Initialize RAKE, SpaCy, and SentimentIntensityAnalyzer (VADER)
 rake = Rake()
@@ -103,54 +111,68 @@ def is_english(text):
 
 def analyze_sentiment(text):
     """
-    Analyzes the sentiment of the input text using VADER sentiment analysis.
-    
-    Args:
-        text (str): The text for sentiment analysis.
-    
-    Returns:
-        float: The sentiment score of the text. Positive for positive sentiment, negative for negative, and neutral.
+    Returns the VADER compound score for the text (-1 to +1).
     """
-    sentiment_score = sid.polarity_scores(text)
-    return sentiment_score['compound']
+    return sid.polarity_scores(text)['compound']
 
 
-def fetch_articles(company_name):
+def get_full_sentiment_scores(text):
     """
-    Fetches articles related to the company from NewsAPI using an API key.
-    
-    Args:
-        company_name (str): The name of the company to search articles for.
-    
+    Returns all four VADER scores for the text.
+
     Returns:
-        list: A list of articles related to the company.
+        dict: {compound, pos, neg, neu}
+    """
+    scores = sid.polarity_scores(text)
+    return {
+        "compound": round(scores["compound"], 4),
+        "pos":      round(scores["pos"], 4),
+        "neg":      round(scores["neg"], 4),
+        "neu":      round(scores["neu"], 4),
+    }
+
+
+def fetch_articles(company_name, from_date=None):
+    """
+    Fetches articles related to the company from NewsAPI.
+
+    Args:
+        company_name (str): Company name to search for.
+        from_date (str, optional): ISO date string (YYYY-MM-DD) lower bound.
+
+    Returns:
+        tuple: (articles: list, total_results: int)
     """
     API_KEY = os.getenv("API_KEY")
     url = f"https://newsapi.org/v2/everything?q={company_name}&apiKey={API_KEY}"
+    if from_date:
+        url += f"&from={from_date}"
 
-    response = requests.get(url)
-    articles = response.json().get("articles", [])
-    return articles
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        return data.get("articles", []), data.get("totalResults", 0)
+    except Exception:
+        return [], 0
 
 
 def generate_tts(text, filename="summary_hindi.mp3"):
     """
     Converts the input text to speech in Hindi and saves it to a file.
-    
+    Returns "error" string if translation or TTS generation fails.
+
     Args:
         text (str): The text to be converted to speech.
         filename (str): The name of the file to save the TTS audio. Default is "summary_hindi.mp3".
-    
+
     Returns:
-        str: The filename of the saved TTS audio.
+        str: The filename of the saved TTS audio, or "error" on failure.
     """
-    # Translate the summary into Hindi using Google Translate
-    translator = Translator()
-    translated_text = translator.translate(text, src='en', dest='hi').text
-
-    # Convert the translated Hindi text to speech
-    tts = gTTS(text=translated_text, lang='hi', slow=False)
-    tts.save(filename)
-
-    # Return the filename for later use
-    return filename
+    try:
+        translator = Translator()
+        translated_text = translator.translate(text, src='en', dest='hi').text
+        tts = gTTS(text=translated_text, lang='hi', slow=False)
+        tts.save(filename)
+        return filename
+    except Exception:
+        return "error"
